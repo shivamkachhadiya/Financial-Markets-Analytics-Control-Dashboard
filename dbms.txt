@@ -1,0 +1,59 @@
+1. Exceptions asset aur issue ke hisaab se:
+
+sql
+SELECT asset, issue, COUNT(*) AS n
+FROM exceptions
+GROUP BY asset, issue
+ORDER BY asset, issue;
+
+2. Har asset ka max drawdown aur uski date:
+
+sql
+SELECT DISTINCT ON (asset)
+       asset, date, ROUND(drawdown::numeric, 3) AS max_drawdown
+FROM drawdown
+ORDER BY asset, drawdown ASC;
+
+3. Latest volatility, sabse zyada se kam:
+
+sql
+SELECT asset, ROUND(volatility::numeric, 3) AS latest_vol
+FROM volatility
+WHERE date = (SELECT MAX(date) FROM volatility)
+ORDER BY latest_vol DESC;
+
+4. Top 10 abnormal moves:
+
+sql
+SELECT date, asset, ROUND(value::numeric, 4) AS move
+FROM exceptions
+WHERE issue = 'Abnormal move'
+ORDER BY ABS(value) DESC
+LIMIT 10;
+
+5. JOIN: price, return aur volatility ek saath (Reliance, aakhri 10 din):
+
+sql
+SELECT p.date, p.asset, p.price, r.return_value, v.volatility
+FROM prices p
+JOIN returns r ON p.date = r.date AND p.asset = r.asset
+LEFT JOIN volatility v ON p.date = v.date AND p.asset = v.asset
+WHERE p.asset = 'RELIANCE.NS'
+ORDER BY p.date DESC
+LIMIT 10;
+
+6. Mahine ke hisaab se average volatility:
+
+sql
+SELECT DATE_TRUNC('month', date)::date AS month,
+       asset,
+       ROUND(AVG(volatility)::numeric, 3) AS avg_vol
+FROM volatility
+WHERE asset <> '^TNX'
+GROUP BY 1, 2
+ORDER BY 1, 2;
+
+7. Sector table:
+
+sql
+SELECT * FROM sector_performance ORDER BY total_return_pct DESC;
